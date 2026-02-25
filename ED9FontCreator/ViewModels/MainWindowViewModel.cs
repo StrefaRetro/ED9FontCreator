@@ -147,7 +147,7 @@ namespace ED9FontCreator.ViewModels
 
 						using var surface = SKSurface.Create(new SKImageInfo(texWidth, texHeight));
 						var canvas = surface.Canvas;
-						canvas.Clear(new SKColor(255, 255, 255, 0));
+						canvas.Clear(SKColors.Transparent);
 
 						using var paint = new SKPaint();
 
@@ -176,6 +176,8 @@ namespace ED9FontCreator.ViewModels
 						float fontAscent = -paint.FontMetrics.Top;
 						float fontDescent = paint.FontMetrics.Bottom;
 						short lineHeight = (short)Math.Ceiling(fontAscent + fontDescent + shadowOffsetY + 6);
+						// Align lineHeight to 4 bytes (BC7 block size) to prevent vertical bleeding
+						lineHeight = (short)((lineHeight + 3) & ~3);
 
 						short currentX = 0;
 						short currentY = 0;
