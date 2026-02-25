@@ -179,7 +179,12 @@ namespace ED9FontCreator.ViewModels
 						// Use Top/Bottom instead of Ascent/Descent to cover full glyph height including accents
 						float fontAscent = -paint.FontMetrics.Top;
 						float fontDescent = paint.FontMetrics.Bottom;
-						short lineHeight = (short)Math.Ceiling(fontAscent + fontDescent + shadowOffsetY + 6);
+
+                        // Add extra padding at the top to prevent artifacts/bleeding above tall characters (Caps/Numbers)
+                        // This shifts the glyph down inside the texture slot, ensuring the top rows are transparent.
+                        int extraTopPadding = 4;
+
+						short lineHeight = (short)Math.Ceiling(fontAscent + fontDescent + shadowOffsetY + 6 + extraTopPadding);
 						// Align lineHeight to 4 bytes (BC7 block size) to prevent vertical bleeding
 						lineHeight = (short)((lineHeight + 3) & ~3);
 
@@ -229,7 +234,8 @@ namespace ED9FontCreator.ViewModels
 							float xCorrection = (visualLeft < 0) ? (float)Math.Ceiling(-visualLeft) : 0;
 
 							float drawX = currentX + xCorrection + 1;
-							float drawY = currentY + fontAscent;
+                            // Add extra top padding to drawY to shift the character down
+							float drawY = currentY + fontAscent + extraTopPadding;
 
 							// --- TEXTURE FRAME DIMENSIONS ---
                             // Fix: Use pixelRect.Right instead of Width to account for positive Left bearings correctly.
@@ -267,7 +273,7 @@ namespace ED9FontCreator.ViewModels
 								currentX = 0;
 								currentY += (short)(lineHeight + texturePadding);
 								drawX = xCorrection + 1;
-								drawY = currentY + fontAscent;
+								drawY = currentY + fontAscent + extraTopPadding;
 							}
 
 							// Drawing (Round positions to avoid subpixel blurring)
