@@ -191,9 +191,17 @@ namespace ED9FontCreator.ViewModels
             var error = await process.StandardError.ReadToEndAsync();
 
             await process.WaitForExitAsync();
+
             if (process.ExitCode != 0 || !string.IsNullOrWhiteSpace(error))
             {
-                ShowInfo($"Texconv Error: {error}", InfoBarState.Error);
+                var logFile = Path.Combine(OutDir, "texconv_log.txt");
+                var logContent = $"[{DateTime.Now}] Texconv Failed\n" +
+                                 $"Exit Code: {process.ExitCode}\n" +
+                                 $"Arguments: {startInfo.Arguments}\n" +
+                                 $"Output: {output}\n" +
+                                 $"Error: {error}\n\n";
+                await File.AppendAllTextAsync(logFile, logContent);
+                ShowInfo($"Texconv Error! Check log: {logFile}", InfoBarState.Error);
                 return false;
             }
             return true;
