@@ -10,7 +10,7 @@
     d:DesignHeight="680"
     d:DesignWidth="1100"
     x:DataType="vm:MainWindowViewModel"
-    FontFamily="Microsoft YaHei"
+    FontFamily="Segoe UI"
     Icon="/Assets/ed9.ico"
     mc:Ignorable="d">
     <Grid ColumnDefinitions="330,*">

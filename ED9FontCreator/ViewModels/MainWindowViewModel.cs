@@ -101,7 +101,7 @@ namespace ED9FontCreator.ViewModels
                     ReplacedChar = FntHelper.Replace(c.Char, IsSimplifiedChinese),
                     ColorChannel = c.ColorChannel,
                     Offset = c.Offset,
-                    Type = 1 // Wymuszamy Type 1 (Proportional) zgodnie z TwnKey
+                    Type = 1 // Force Type 1 (Proportional) according to TwnKey
                 }).ToList();
 
                 if (AddPolishChars)
@@ -157,11 +157,15 @@ namespace ED9FontCreator.ViewModels
 						using var typeface = SKTypeface.FromFamilyName(FontSettings.FontName, weight, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright);
 						using var symbolTypeface = SKTypeface.FromFamilyName("Segoe UI Symbol", weight, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright);
 
+                        // Add fallback fonts for Latin/Polish characters
+                        var fallbackFontFamilies = new[] { "Segoe UI", "Arial", "Tahoma", "Times New Roman" };
+                        var fallbackTypefaces = fallbackFontFamilies.Select(f => SKTypeface.FromFamilyName(f, weight, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright)).ToList();
+
 						paint.TextSize = FontSettings.FontSize;
 						paint.IsAntialias = true;
 						paint.Color = SKColors.White;
 
-						// Ustawienia cienia
+						// Shadow settings
 						bool drawShadow = true;
 						float shadowOffsetX = 2.0f;
 						float shadowOffsetY = 2.0f;
@@ -181,7 +185,7 @@ namespace ED9FontCreator.ViewModels
 
 						short currentX = 0;
 						short currentY = 0;
-						int texturePadding = 8; // Increased padding to prevent bleeding
+                        int texturePadding = Math.Max(FontSettings.Padding, 8); // Respect user padding but ensure minimum 8 to prevent bleeding
 
 						var charList = DrawChars.ToList();
 						charList.Sort((x, y) => x.Code.CompareTo(y.Code));
@@ -190,19 +194,23 @@ namespace ED9FontCreator.ViewModels
 
 						foreach (var c in charList)
 						{
-							var usedTypeface = typeface.ContainsGlyph(c.ReplacedChar) ? typeface : symbolTypeface;
+                            SKTypeface usedTypeface = typeface;
+                            if (!typeface.ContainsGlyph(c.ReplacedChar))
+                            {
+                                usedTypeface = fallbackTypefaces.FirstOrDefault(tf => tf.ContainsGlyph(c.ReplacedChar)) ?? symbolTypeface;
+                            }
 							paint.Typeface = usedTypeface;
 							shadowPaint.Typeface = usedTypeface;
 
 							string textToDraw = c.ReplacedChar.ToString();
 
-							// Advance: logiczna szerokość (o ile przesunąć kursor)
+							// Advance: logical width (how much to move the cursor)
 							float advanceWidth = paint.MeasureText(textToDraw);
 
-							// Bounds: gdzie są piksele
+							// Bounds: where pixels are
 							paint.MeasureText(textToDraw, ref pixelRect);
 
-							// --- FIX SPACJI ---
+							// --- SPACE FIX ---
 							if (c.Char == ' ' || pixelRect.Width <= 0)
 							{
 								c.XOffset = 0; c.YOffset = 0;
@@ -213,8 +221,8 @@ namespace ED9FontCreator.ViewModels
 								continue;
 							}
 
-							// --- OBLICZANIE PRZESUNIĘCIA (Anti-Clip) ---
-							// Jeśli litera wystaje w lewo (np. 'j', 'f'), przesuwamy ją w prawo na teksturze.
+							// --- OFFSET CALCULATION (Anti-Clip) ---
+							// If the letter protrudes to the left (e.g. 'j', 'f'), move it to the right on the texture.
 							float visualLeft = pixelRect.Left;
 							// Round correction to integer to ensure pixel-perfect rendering
 							float xCorrection = (visualLeft < 0) ? (float)Math.Ceiling(-visualLeft) : 0;
@@ -222,7 +230,7 @@ namespace ED9FontCreator.ViewModels
 							float drawX = currentX + xCorrection + 1;
 							float drawY = currentY + fontAscent;
 
-							// --- WYMIARY KLATKI NA TEKSTURZE ---
+							// --- TEXTURE FRAME DIMENSIONS ---
 							float contentRight = drawX + pixelRect.Width + shadowOffsetX;
 							float contentWidth = contentRight - currentX;
 
@@ -230,26 +238,26 @@ namespace ED9FontCreator.ViewModels
 							c.PixelHeight = lineHeight;
 							c.Width = c.PixelWidth;
 
-							// --- FIX GAP PO 'J' ---
-							// Poprzednio dodawaliśmy xCorrection tutaj, co tworzyło dziurę.
-							// Teraz bierzemy czysty AdvanceWidth + mały margines (1.5px).
-							// xCorrection służy tylko do rysowania na teksturze, nie zwiększa logicznego odstępu.
+							// --- FIX GAP AFTER 'J' ---
+							// Previously we added xCorrection here, which created a hole.
+							// Now we take pure AdvanceWidth + small margin (1.5px).
+							// xCorrection is only for drawing on the texture, it does not increase the logical spacing.
 							float calculatedAdvance = advanceWidth + 0.5f;
 
-							// ZABEZPIECZENIE:
-							// Sprawdzamy, czy "Czysty Advance" nie jest mniejszy niż "Fizyczne piksele pomniejszone o przesunięcie".
-							// Czyli: Advance musi być przynajmniej taki, żeby pokryć narysowaną literę (nie licząc pustego miejsca z lewej).
+							// SAFEGUARD:
+							// Check if "Pure Advance" is not smaller than "Physical pixels minus offset".
+							// I.e.: Advance must be at least enough to cover the drawn letter (excluding empty space on the left).
 							// float physicalEnd = (c.PixelWidth - xCorrection);
 							// float safeAdvance = Math.Max(calculatedAdvance, physicalEnd);
 
 							c.MaxWidth = (short)Math.Ceiling(calculatedAdvance);
 
-							// Offsety 0 (silnik gry)
-							// Jeżeli przesuwamy literę na teksturze (xCorrection), musimy cofnąć ją przy renderowaniu
+							// Offsets 0 (game engine)
+							// If we move the letter on the texture (xCorrection), we must move it back when rendering
 							c.XOffset = (short)-Math.Ceiling(xCorrection);
 							c.YOffset = 0;
 
-							// Nowa linia
+							// New Line
 							if (currentX + c.PixelWidth + texturePadding > texWidth)
 							{
 								currentX = 0;
@@ -258,7 +266,7 @@ namespace ED9FontCreator.ViewModels
 								drawY = currentY + fontAscent;
 							}
 
-							// Rysowanie (Round positions to avoid subpixel blurring)
+							// Drawing (Round positions to avoid subpixel blurring)
 							if (drawShadow)
 							{
 								canvas.DrawText(textToDraw, (float)Math.Round(drawX + shadowOffsetX), (float)Math.Round(drawY + shadowOffsetY), shadowPaint);
@@ -273,7 +281,10 @@ namespace ED9FontCreator.ViewModels
 							currentX = (short)((currentX + 3) & ~3);
 						}
 
-						// Zapis PNG
+                        // Dispose fallbacks
+                        foreach(var fb in fallbackTypefaces) fb.Dispose();
+
+						// Save PNG
 						using var image = surface.Snapshot();
 						using var data = image.Encode(SKEncodedImageFormat.Png, 100);
 						var pngFile = Path.Combine(OutDir, Path.GetFileNameWithoutExtension(FntPath) + ".png");
@@ -282,12 +293,12 @@ namespace ED9FontCreator.ViewModels
 							data.SaveTo(stream);
 						}
 
-						// Zapis FNT
+						// Save FNT
 						DrawChars = charList;
 						if (!ExportFnt())
 							throw new Exception("Export font failed");
 
-						// Konwersja DDS
+						// Conversion DDS
 						if (!(await PNG2DDS(pngFile)))
 							throw new Exception("Font conversion failed");
 
@@ -372,22 +383,22 @@ namespace ED9FontCreator.ViewModels
                     fs.WriteShort(c.X);
                     fs.WriteShort(c.Y);
 
-                    // ZMIANA: TwnKey mówi, że 0xC (tutaj MaxWidth) to po prostu Width (Szerokość klatki)
-                    fs.WriteShort(c.PixelWidth); // Szerokość klatki na teksturze
+                    // CHANGE: TwnKey says 0xC (here MaxWidth) is simply Width (Frame Width)
+                    fs.WriteShort(c.PixelWidth); // Frame width on texture
 
-                    // ZMIANA: 0xE (PixelHeight) to Height
-                    fs.WriteShort(c.PixelHeight); // Wysokość klatki
+                    // CHANGE: 0xE (PixelHeight) is Height
+                    fs.WriteShort(c.PixelHeight); // Frame height
 
                     fs.WriteShort(c.ColorChannel); // 0x100 / 0x200
 
-                    // ZMIANA: 0x12 (XOffset) - wg TwnKey to kerning/spacing, ustawiamy 0 lub małą wartość
+                    // CHANGE: 0x12 (XOffset) - according to TwnKey this is kerning/spacing, set to 0 or small value
                     fs.WriteShort(c.XOffset);
 
-                    // ZMIANA: 0x14 (YOffset) - wg TwnKey ustawić na 0, bo silnik jest zbugowany
+                    // CHANGE: 0x14 (YOffset) - according to TwnKey set to 0, because engine is buggy
                     fs.WriteShort(0);
 
-                    // ZMIANA: 0x16 (Last Short) - wg TwnKey "distance to next char", Width + 2
-                    fs.WriteShort(c.MaxWidth); // W kodzie wyżej ustawiłem to na PixelWidth + 2
+                    // CHANGE: 0x16 (Last Short) - according to TwnKey "distance to next char", Width + 2
+                    fs.WriteShort(c.MaxWidth); // In code above I set this to PixelWidth + 2
                 }
             }
             catch
