@@ -191,7 +191,12 @@ namespace ED9FontCreator.ViewModels
             var error = await process.StandardError.ReadToEndAsync();
 
             await process.WaitForExitAsync();
-            return error == "";
+            if (process.ExitCode != 0 || !string.IsNullOrWhiteSpace(error))
+            {
+                ShowInfo($"Texconv Error: {error}", InfoBarState.Error);
+                return false;
+            }
+            return true;
         }
         private bool ExportFnt()
         {
