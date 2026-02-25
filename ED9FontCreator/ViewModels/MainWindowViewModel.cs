@@ -178,7 +178,7 @@ namespace ED9FontCreator.ViewModels
 
 						short currentX = 0;
 						short currentY = 0;
-						int texturePadding = 4;
+						int texturePadding = 8; // Increased padding to prevent bleeding
 
 						var charList = DrawChars.ToList();
 						charList.Sort((x, y) => x.Code.CompareTo(y.Code));
@@ -213,7 +213,8 @@ namespace ED9FontCreator.ViewModels
 							// --- OBLICZANIE PRZESUNIĘCIA (Anti-Clip) ---
 							// Jeśli litera wystaje w lewo (np. 'j', 'f'), przesuwamy ją w prawo na teksturze.
 							float visualLeft = pixelRect.Left;
-							float xCorrection = (visualLeft < 0) ? -visualLeft : 0;
+							// Round correction to integer to ensure pixel-perfect rendering
+							float xCorrection = (visualLeft < 0) ? (float)Math.Ceiling(-visualLeft) : 0;
 
 							float drawX = currentX + xCorrection + 1;
 							float drawY = currentY + fontAscent;
@@ -254,17 +255,19 @@ namespace ED9FontCreator.ViewModels
 								drawY = currentY + fontAscent;
 							}
 
-							// Rysowanie
+							// Rysowanie (Round positions to avoid subpixel blurring)
 							if (drawShadow)
 							{
-								canvas.DrawText(textToDraw, drawX + shadowOffsetX, drawY + shadowOffsetY, shadowPaint);
+								canvas.DrawText(textToDraw, (float)Math.Round(drawX + shadowOffsetX), (float)Math.Round(drawY + shadowOffsetY), shadowPaint);
 							}
-							canvas.DrawText(textToDraw, drawX, drawY, paint);
+							canvas.DrawText(textToDraw, (float)Math.Round(drawX), (float)Math.Round(drawY), paint);
 
 							c.X = currentX;
 							c.Y = currentY;
 
 							currentX += (short)(c.PixelWidth + texturePadding);
+							// Align currentX to 4 bytes (BC7 block size) to prevent compression bleeding
+							currentX = (short)((currentX + 3) & ~3);
 						}
 
 						// Zapis PNG
