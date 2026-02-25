@@ -179,7 +179,7 @@ namespace ED9FontCreator.ViewModels
             var startInfo = new ProcessStartInfo
             {
                 FileName = "texconv.exe",
-                Arguments = $"-y -nologo -ft dds -w 0 -h 0 -if CUBIC -f BC3_UNORM -m 1 -o \"{OutDir}\" -r:keep \"{png}\"",
+                Arguments = $"-y -nologo -ft dds -w 0 -h 0 -if CUBIC -f BC7_UNORM -m 1 -o \"{OutDir}\" -r:keep \"{png}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -191,17 +191,9 @@ namespace ED9FontCreator.ViewModels
             var error = await process.StandardError.ReadToEndAsync();
 
             await process.WaitForExitAsync();
-
             if (process.ExitCode != 0 || !string.IsNullOrWhiteSpace(error))
             {
-                var logFile = Path.Combine(OutDir, "texconv_log.txt");
-                var logContent = $"[{DateTime.Now}] Texconv Failed\n" +
-                                 $"Exit Code: {process.ExitCode}\n" +
-                                 $"Arguments: {startInfo.Arguments}\n" +
-                                 $"Output: {output}\n" +
-                                 $"Error: {error}\n\n";
-                await File.AppendAllTextAsync(logFile, logContent);
-                ShowInfo($"Texconv Error! Check log: {logFile}", InfoBarState.Error);
+                ShowInfo($"Texconv Error: {error}", InfoBarState.Error);
                 return false;
             }
             return true;

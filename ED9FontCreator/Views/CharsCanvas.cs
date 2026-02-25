@@ -164,7 +164,7 @@ public partial class CharsCanvas
 
     public override void Render(DrawingContext context)
     {
-        //context.DrawRectangle(Brushes.Black, null, new Rect(Bounds.Size));
+        context.DrawRectangle(Brushes.Black, null, new Rect(Bounds.Size));
 
         if (Chars is not { Count: > 0 }) return;
         var draw = new CharsDraw(Bounds, Chars, Font, IsPreview, IsShowCharBackground);
