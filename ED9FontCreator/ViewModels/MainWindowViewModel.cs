@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.Input;
 using ED9FontCreator.Views;
@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using SkiaSharp;
 
 namespace ED9FontCreator.ViewModels
 {
@@ -24,6 +25,13 @@ namespace ED9FontCreator.ViewModels
                 Directory.CreateDirectory(OutDir);
             if (File.Exists(ReplaceTxtFile))
                 ReplaceText = File.ReadAllText(ReplaceTxtFile);
+        }
+
+        private int ToNextPOT(int value)
+        {
+            int v = 1;
+            while (v < value) v <<= 1;
+            return v;
         }
 
         [RelayCommand]
@@ -46,7 +54,6 @@ namespace ED9FontCreator.ViewModels
             {
                 CanExportFont = false;
             }
-   
         }
 
         [RelayCommand]
@@ -94,7 +101,7 @@ namespace ED9FontCreator.ViewModels
                     ReplacedChar = FntHelper.Replace(c.Char, IsSimplifiedChinese),
                     ColorChannel = c.ColorChannel,
                     Offset = c.Offset,
-                    Type = c.Type//c.Char is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9' or ' ' or ',' or '(' or ')' or '.' ? 1 : 0,
+                    Type = 1 // Wymuszamy Type 1 (Proportional) zgodnie z TwnKey
                 }).ToList();
 
                 if (AddPolishChars)
@@ -127,39 +134,166 @@ namespace ED9FontCreator.ViewModels
             }
         }
 
-        [RelayCommand(CanExecute = nameof(CanExportFont))]
-        private async void ExportFont()
-        {
-            try
-            {
-                if (DrawChars == null || DrawChars.Count == 0)
-                    throw new Exception("Generate characters first");
-                //fnt
-                if (!ExportFnt())
-                    throw new Exception("Export font failed");
-                //png
-                var pSize = new PixelSize((int)DrawCanvas.Bounds.Width, (int)DrawCanvas.Bounds.Height);
-                var size = new Size(pSize.Width, pSize.Height);
-                using RenderTargetBitmap bitmap = new(pSize, new Vector(96, 96));
-                DrawCanvas.Measure(size);
-                DrawCanvas.Arrange(new Rect(size));
-                DrawCanvas.UpdateLayout();
-                bitmap.Render(DrawCanvas);
-                var file = Path.Combine(OutDir, Path.GetFileNameWithoutExtension(FntPath) + ".png");
-                bitmap.Save(file,100);
-                //convert
-                if (!(await PNG2DDS(file)))
-                    throw new Exception("Font conversion failed");
-#if RELEASE
-                File.Delete(file);
-#endif
-                ShowInfo("Font export complete.", InfoBarState.Success);
-            }
-            catch (Exception e)
-            {
-                ShowInfo(e.Message, InfoBarState.Error);
-            }
-        }
+		[RelayCommand(CanExecute = nameof(CanExportFont))]
+				private async void ExportFont()
+				{
+					try
+					{
+						if (DrawChars == null || DrawChars.Count == 0)
+							throw new Exception("Generate characters first");
+
+						int texWidth = 4096;
+						int texHeight = 4096;
+
+						using var surface = SKSurface.Create(new SKImageInfo(texWidth, texHeight));
+						var canvas = surface.Canvas;
+						canvas.Clear(new SKColor(255, 255, 255, 0));
+
+						using var paint = new SKPaint();
+
+						SKFontStyleWeight weight = SKFontStyleWeight.Normal;
+						if (Enum.TryParse(FontSettings.FontWeight, out SKFontStyleWeight parsedWeight)) weight = parsedWeight;
+
+						using var typeface = SKTypeface.FromFamilyName(FontSettings.FontName, weight, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright);
+						using var symbolTypeface = SKTypeface.FromFamilyName("Segoe UI Symbol", weight, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright);
+
+						paint.TextSize = FontSettings.FontSize;
+						paint.IsAntialias = true;
+						paint.Color = SKColors.White;
+
+						// Ustawienia cienia
+						bool drawShadow = true;
+						float shadowOffsetX = 2.0f;
+						float shadowOffsetY = 2.0f;
+						byte shadowAlpha = 180;
+
+						using var shadowPaint = new SKPaint();
+						shadowPaint.TextSize = paint.TextSize;
+						shadowPaint.IsAntialias = true;
+						shadowPaint.Color = SKColors.Black.WithAlpha(shadowAlpha);
+
+						float fontAscent = -paint.FontMetrics.Ascent;
+						float fontDescent = paint.FontMetrics.Descent;
+						short lineHeight = (short)Math.Ceiling(fontAscent + fontDescent + shadowOffsetY + 6);
+
+						short currentX = 0;
+						short currentY = 0;
+						int texturePadding = 4;
+
+						var charList = DrawChars.ToList();
+						charList.Sort((x, y) => x.Code.CompareTo(y.Code));
+
+						var pixelRect = new SKRect();
+
+						foreach (var c in charList)
+						{
+							var usedTypeface = typeface.ContainsGlyph(c.ReplacedChar) ? typeface : symbolTypeface;
+							paint.Typeface = usedTypeface;
+							shadowPaint.Typeface = usedTypeface;
+
+							string textToDraw = c.ReplacedChar.ToString();
+
+							// Advance: logiczna szerokość (o ile przesunąć kursor)
+							float advanceWidth = paint.MeasureText(textToDraw);
+
+							// Bounds: gdzie są piksele
+							paint.MeasureText(textToDraw, ref pixelRect);
+
+							// --- FIX SPACJI ---
+							if (c.Char == ' ' || pixelRect.Width <= 0)
+							{
+								c.XOffset = 0; c.YOffset = 0;
+								c.PixelWidth = 0; c.PixelHeight = 0;
+								c.Width = (short)Math.Ceiling(advanceWidth);
+								c.MaxWidth = (short)Math.Ceiling(advanceWidth);
+								c.X = 0; c.Y = 0;
+								continue;
+							}
+
+							// --- OBLICZANIE PRZESUNIĘCIA (Anti-Clip) ---
+							// Jeśli litera wystaje w lewo (np. 'j', 'f'), przesuwamy ją w prawo na teksturze.
+							float visualLeft = pixelRect.Left;
+							float xCorrection = (visualLeft < 0) ? -visualLeft : 0;
+
+							float drawX = currentX + xCorrection + 1;
+							float drawY = currentY + fontAscent;
+
+							// --- WYMIARY KLATKI NA TEKSTURZE ---
+							float contentRight = drawX + pixelRect.Width + shadowOffsetX;
+							float contentWidth = contentRight - currentX;
+
+							c.PixelWidth = (short)Math.Ceiling(contentWidth + 2);
+							c.PixelHeight = lineHeight;
+							c.Width = c.PixelWidth;
+
+							// --- FIX GAP PO 'J' ---
+							// Poprzednio dodawaliśmy xCorrection tutaj, co tworzyło dziurę.
+							// Teraz bierzemy czysty AdvanceWidth + mały margines (1.5px).
+							// xCorrection służy tylko do rysowania na teksturze, nie zwiększa logicznego odstępu.
+							float calculatedAdvance = advanceWidth + 0.5f;
+
+							// ZABEZPIECZENIE:
+							// Sprawdzamy, czy "Czysty Advance" nie jest mniejszy niż "Fizyczne piksele pomniejszone o przesunięcie".
+							// Czyli: Advance musi być przynajmniej taki, żeby pokryć narysowaną literę (nie licząc pustego miejsca z lewej).
+							// float physicalEnd = (c.PixelWidth - xCorrection);
+							// float safeAdvance = Math.Max(calculatedAdvance, physicalEnd);
+
+							c.MaxWidth = (short)Math.Ceiling(calculatedAdvance);
+
+							// Offsety 0 (silnik gry)
+							c.XOffset = 0;
+							c.YOffset = 0;
+
+							// Nowa linia
+							if (currentX + c.PixelWidth + texturePadding > texWidth)
+							{
+								currentX = 0;
+								currentY += (short)(lineHeight + texturePadding);
+								drawX = xCorrection + 1;
+								drawY = currentY + fontAscent;
+							}
+
+							// Rysowanie
+							if (drawShadow)
+							{
+								canvas.DrawText(textToDraw, drawX + shadowOffsetX, drawY + shadowOffsetY, shadowPaint);
+							}
+							canvas.DrawText(textToDraw, drawX, drawY, paint);
+
+							c.X = currentX;
+							c.Y = currentY;
+
+							currentX += (short)(c.PixelWidth + texturePadding);
+						}
+
+						// Zapis PNG
+						using var image = surface.Snapshot();
+						using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+						var pngFile = Path.Combine(OutDir, Path.GetFileNameWithoutExtension(FntPath) + ".png");
+						using (var stream = File.OpenWrite(pngFile))
+						{
+							data.SaveTo(stream);
+						}
+
+						// Zapis FNT
+						DrawChars = charList;
+						if (!ExportFnt())
+							throw new Exception("Export font failed");
+
+						// Konwersja DDS
+						if (!(await PNG2DDS(pngFile)))
+							throw new Exception("Font conversion failed");
+
+		#if RELEASE
+						File.Delete(pngFile);
+		#endif
+						ShowInfo("Font export complete (Padding Fix).", InfoBarState.Success);
+					}
+					catch (Exception e)
+					{
+						ShowInfo(e.Message, InfoBarState.Error);
+					}
+				}
 
         [RelayCommand]
         private void OpenOutDir()
@@ -179,7 +313,7 @@ namespace ED9FontCreator.ViewModels
             var startInfo = new ProcessStartInfo
             {
                 FileName = "texconv.exe",
-                Arguments = $"-y -nologo -ft dds -w 0 -h 0 -if CUBIC -f BC7_UNORM -m 1 -o \"{OutDir}\" -r:keep \"{png}\"",
+                Arguments = $"-y -nologo -ft dds -w 0 -h 0 -if CUBIC -f BC7_UNORM -m 1 -pmalpha -o \"{OutDir}\" -r:keep \"{png}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -198,13 +332,14 @@ namespace ED9FontCreator.ViewModels
             }
             return true;
         }
+
         private bool ExportFnt()
         {
             try
             {
                 if (DrawChars == null) throw new Exception();
                 var temp = DrawChars.ToList();
-                temp.Sort((x, y) => x.Code.CompareTo(y.Code));
+
                 var file = Path.Combine(OutDir, Path.GetFileName(FntPath));
                 if (File.Exists(file))
                     File.Delete(file);
@@ -229,12 +364,23 @@ namespace ED9FontCreator.ViewModels
                     fs.WriteInt(c.Type);
                     fs.WriteShort(c.X);
                     fs.WriteShort(c.Y);
-                    fs.WriteShort(c.MaxWidth);
-                    fs.WriteShort(c.PixelHeight);
-                    fs.WriteShort(c.ColorChannel);
-                    fs.WriteShort(c.XOffset);
-                    fs.WriteShort(c.YOffset);
-                    fs.WriteShort(c.Width);
+
+                    // ZMIANA: TwnKey mówi, że 0xC (tutaj MaxWidth) to po prostu Width (Szerokość klatki)
+                    fs.WriteShort(c.PixelWidth); // Szerokość klatki na teksturze
+
+                    // ZMIANA: 0xE (PixelHeight) to Height
+                    fs.WriteShort(c.PixelHeight); // Wysokość klatki
+
+                    fs.WriteShort(c.ColorChannel); // 0x100 / 0x200
+
+                    // ZMIANA: 0x12 (XOffset) - wg TwnKey to kerning/spacing, ustawiamy 0 lub małą wartość
+                    fs.WriteShort(0);
+
+                    // ZMIANA: 0x14 (YOffset) - wg TwnKey ustawić na 0, bo silnik jest zbugowany
+                    fs.WriteShort(0);
+
+                    // ZMIANA: 0x16 (Last Short) - wg TwnKey "distance to next char", Width + 2
+                    fs.WriteShort(c.MaxWidth); // W kodzie wyżej ustawiłem to na PixelWidth + 2
                 }
             }
             catch
