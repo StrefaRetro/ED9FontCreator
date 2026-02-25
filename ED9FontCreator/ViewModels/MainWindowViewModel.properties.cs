@@ -24,6 +24,7 @@ namespace ED9FontCreator.ViewModels
 
         //char settings
         [ObservableProperty] private bool _isSimplifiedChinese = true;
+        [ObservableProperty] private bool _addPolishChars;
 
         [ObservableProperty] private string _replaceText = "";
         private string ReplaceTxtFile => System.IO.Path.Combine(Environment.CurrentDirectory, "replace.txt");

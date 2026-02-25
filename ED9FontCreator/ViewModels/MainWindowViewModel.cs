@@ -35,12 +35,12 @@ namespace ED9FontCreator.ViewModels
                 {
                     DrawChars = null;
                     this.Fnt = null;
-                    ShowInfo("解析失败", InfoBarState.Error);
+                    ShowInfo("Analysis failed", InfoBarState.Error);
                     return;
                 }
                 this.Fnt = fnt;
                 DrawChars = null;
-                ShowInfo("解析成功", InfoBarState.Success);
+                ShowInfo("Analysis successful", InfoBarState.Success);
             }
             finally
             {
@@ -96,8 +96,27 @@ namespace ED9FontCreator.ViewModels
                     Offset = c.Offset,
                     Type = c.Type//c.Char is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9' or ' ' or ',' or '(' or ')' or '.' ? 1 : 0,
                 }).ToList();
+
+                if (AddPolishChars)
+                {
+                    var polishChars = "ĄĆĘŁŃÓŚŹŻąćęłńóśźż";
+                    foreach (var c in polishChars)
+                    {
+                        if (!temp.Any(x => x.Char == c))
+                        {
+                            temp.Add(new FntChar
+                            {
+                                Char = c,
+                                ReplacedChar = c,
+                                ColorChannel = 0x200,
+                                Type = 1
+                            });
+                        }
+                    }
+                }
+
                 DrawChars = temp;
-                ShowInfo("生成字符完成", InfoBarState.Success);
+                ShowInfo("Character generation complete", InfoBarState.Success);
                 CanExportFont = true;
             }
             catch (Exception e)
@@ -114,10 +133,10 @@ namespace ED9FontCreator.ViewModels
             try
             {
                 if (DrawChars == null || DrawChars.Count == 0)
-                    throw new Exception("先生成字符");
+                    throw new Exception("Generate characters first");
                 //fnt
                 if (!ExportFnt())
-                    throw new Exception("导出字体失败");
+                    throw new Exception("Export font failed");
                 //png
                 var pSize = new PixelSize((int)DrawCanvas.Bounds.Width, (int)DrawCanvas.Bounds.Height);
                 var size = new Size(pSize.Width, pSize.Height);
@@ -130,11 +149,11 @@ namespace ED9FontCreator.ViewModels
                 bitmap.Save(file,100);
                 //convert
                 if (!(await PNG2DDS(file)))
-                    throw new Exception("转换字体失败");
+                    throw new Exception("Font conversion failed");
 #if RELEASE
                 File.Delete(file);
 #endif
-                ShowInfo("导出字体完成.", InfoBarState.Success);
+                ShowInfo("Font export complete.", InfoBarState.Success);
             }
             catch (Exception e)
             {
@@ -184,8 +203,21 @@ namespace ED9FontCreator.ViewModels
                 var file = Path.Combine(OutDir, Path.GetFileName(FntPath));
                 if (File.Exists(file))
                     File.Delete(file);
+
+                var count = (short)temp.Count;
+                var dataLength = count * 24;
+                var head = (byte[])Fnt!.Head.Clone();
+                var countBytes = BitConverter.GetBytes(count);
+                head[8] = countBytes[0];
+                head[9] = countBytes[1];
+                var lengthBytes = BitConverter.GetBytes(dataLength);
+                head[36] = lengthBytes[0];
+                head[37] = lengthBytes[1];
+                head[38] = lengthBytes[2];
+                head[39] = lengthBytes[3];
+
                 using FileStream fs = new(file, FileMode.Create);
-                fs.Write(Fnt!.Head);
+                fs.Write(head);
                 foreach (var c in temp)
                 {
                     fs.WriteInt(c.Code);

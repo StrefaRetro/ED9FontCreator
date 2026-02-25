@@ -18,7 +18,7 @@
             <TabItem
                 Padding="5"
                 FontSize="20"
-                Header="FNT解析">
+                Header="FNT Analysis">
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="5">
                         <TextBox
@@ -26,20 +26,20 @@
                             VerticalContentAlignment="Center"
                             DragDrop.AllowDrop="True"
                             Text="{Binding FntPath}"
-                            Watermark="Fnt文件路径">
+                            Watermark="Fnt File Path">
                             <TextBox.InnerRightContent>
                                 <Button
                                     Margin="2"
                                     Command="{Binding AnalyzeFntFileCommand}"
-                                    Content="解析" />
+                                    Content="Analyze" />
                             </TextBox.InnerRightContent>
                         </TextBox>
                         <Panel>
-                            <TextBlock Foreground="#707070" Text="{Binding Fnt.TotalChars, StringFormat=总字符数: {0}, FallbackValue=总字符数: 0}" />
+                            <TextBlock Foreground="#707070" Text="{Binding Fnt.TotalChars, StringFormat=Total Chars: {0}, FallbackValue=Total Chars: 0}" />
                             <TextBlock
                                 HorizontalAlignment="Right"
                                 Foreground="#707070"
-                                Text="{Binding Fnt.DataLength, StringFormat=数据长度: {0:X}, FallbackValue=数据长度: 0}" />
+                                Text="{Binding Fnt.DataLength, StringFormat=Data Length: {0:X}, FallbackValue=Data Length: 0}" />
                         </Panel>
                         <TextBox
                             Name="searchFntCharTextBox"
@@ -50,14 +50,14 @@
                                     Margin="5"
                                     VerticalAlignment="Center"
                                     Foreground="#707070"
-                                    Text="搜索字符:" />
+                                    Text="Search Char:" />
                             </TextBox.InnerLeftContent>
                             <TextBox.InnerRightContent>
                                 <Button
                                     Margin="2"
                                     Command="{Binding SearchFntCharCommand}"
                                     CommandParameter="{Binding #searchFntCharTextBox.Text}"
-                                    Content="搜索" />
+                                    Content="Search" />
                             </TextBox.InnerRightContent>
                         </TextBox>
                         <TextBlock Text="{Binding SearchedFntChar.Code, StringFormat=Code:{0:X}}" />
@@ -76,24 +76,24 @@
             <TabItem
                 Padding="5"
                 FontSize="20"
-                Header="字体设定">
+                Header="Font Settings">
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="5">
                         <TextBlock
                             FontSize="18"
                             FontWeight="Bold"
-                            Text="DDS设定" />
-                        <TextBox Text="{Binding FontSettings.FontName}" Watermark="字体名称" />
+                            Text="DDS Settings" />
+                        <TextBox Text="{Binding FontSettings.FontName}" Watermark="Font Name" />
                         <NumericUpDown
                             FormatString="0"
-                            Watermark="字体大小"
+                            Watermark="Font Size"
                             Value="{Binding FontSettings.FontSize}" />
                         <DockPanel>
                             <TextBlock
                                 Margin="5"
                                 VerticalAlignment="Center"
                                 Foreground="#707070"
-                                Text="字体粗细:" />
+                                Text="Font Weight:" />
                             <ComboBox
                                 HorizontalAlignment="Stretch"
                                 ItemsSource="{Binding FontWeights}"
@@ -104,7 +104,7 @@
                                 Margin="5"
                                 VerticalAlignment="Center"
                                 Foreground="#707070"
-                                Text="字体风格:" />
+                                Text="Font Style:" />
                             <ComboBox
                                 HorizontalAlignment="Stretch"
                                 ItemsSource="{Binding FontStyles}"
@@ -114,26 +114,26 @@
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
                             Command="{Binding DefaultUserSettingCommand}"
-                            Content="重置设定" />
+                            Content="Reset Settings" />
                         <TextBlock
                             FontSize="18"
                             FontWeight="Bold"
-                            Text="预览" />
-                        <TextBlock Foreground="#707070" Text="仅供参考，以实际游戏为准" />
+                            Text="Preview" />
+                        <TextBlock Foreground="#707070" Text="For reference only, check in-game result." />
                         <CheckBox
                             Name="isShowCharBackgroundBox"
-                            Content="显示字符背景"
+                            Content="Show Char Background"
                             IsChecked="True" />
                         <TextBox
                             Name="previewTextBox"
-                            Text="预 览:ijfp（）"
-                            Watermark="预览文本">
+                            Text="Preview:ijfp()"
+                            Watermark="Preview Text">
                             <TextBox.InnerRightContent>
                                 <Button
                                     Margin="2"
                                     Command="{Binding PreviewTextCommand}"
                                     CommandParameter="{Binding #previewTextBox.Text}"
-                                    Content="预览" />
+                                    Content="Preview" />
                             </TextBox.InnerRightContent>
                         </TextBox>
                         <Border Margin="0,0,0,10" ClipToBounds="True">
@@ -159,15 +159,16 @@
             <TabItem
                 Padding="5"
                 FontSize="20"
-                Header="字符设定">
+                Header="Character Config">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top" Spacing="5">
                         <TextBlock
                             FontSize="18"
                             FontWeight="Bold"
-                            Text="字符替换" />
-                        <CheckBox Content="繁转简" IsChecked="{Binding IsSimplifiedChinese}" />
-                        <TextBlock Foreground="#707070" Text="替换格式: [無]=[无]" />
+                            Text="Character Replacement" />
+                        <CheckBox Content="Trad to Simp Chinese" IsChecked="{Binding IsSimplifiedChinese}" />
+                        <CheckBox Content="Add Polish Characters" IsChecked="{Binding AddPolishChars}" />
+                        <TextBlock Foreground="#707070" Text="Format: [Old]=[New]" />
                     </StackPanel>
                     <TextBox
                         Margin="0,5"
@@ -180,7 +181,7 @@
             <TabItem
                 Padding="5"
                 FontSize="20"
-                Header="关于">
+                Header="About">
                 <StackPanel Spacing="5">
                     <TextBlock>
                         <Run
@@ -192,7 +193,7 @@
                             Foreground="#606060"
                             Text="1.0.0" />
                     </TextBlock>
-                    <TextBlock Text="作者: Jelly" />
+                    <TextBlock Text="Author: Jelly" />
                     <HyperlinkButton Content="Github" NavigateUri="https://github.com/J31why/ED9FontCreator" />
                 </StackPanel>
             </TabItem>
@@ -203,14 +204,14 @@
                 DockPanel.Dock="Top"
                 Orientation="Horizontal"
                 Spacing="5">
-                <Button Command="{Binding GenerateCharsCommand}" Content="生成字符" />
-                <Button Command="{Binding ExportFontCommand}" Content="导出字体文件" />
-                <Button Command="{Binding OpenOutDirCommand}" Content="打开输出目录" />
+                <Button Command="{Binding GenerateCharsCommand}" Content="Generate Chars" />
+                <Button Command="{Binding ExportFontCommand}" Content="Export Font File" />
+                <Button Command="{Binding OpenOutDirCommand}" Content="Open Output Dir" />
                 <TextBlock
                     Margin="5,4"
                     VerticalAlignment="Center"
                     Foreground="IndianRed"
-                    Text="注意生成的字符不要超过底部边界." />
+                    Text="Warning: Generated characters should not exceed the bottom boundary." />
             </StackPanel>
             <ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
                 <views:CharsCanvas
