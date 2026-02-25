@@ -60,6 +60,8 @@ public partial class CharsCanvas
             using var paint = new SKPaint();
             paint.TextSize = _fontSettings.FontSize;
             paint.IsAntialias = true;
+            paint.LcdRenderText = false;
+            paint.SubpixelText = false;
             if (_isPreview)
             {
                 paint.Color = new SKColor(255, 255, 255);
@@ -107,7 +109,7 @@ public partial class CharsCanvas
                 if (x + c.MaxWidth > Bounds.Width)
                 {
                     x = 0;
-                    y += (short)(highest + 1);  //+1防止过于拥挤
+                    y += (short)(highest + 4);  //+4防止过于拥挤
                     highest = 0;
                 }
 
@@ -138,7 +140,7 @@ public partial class CharsCanvas
                 c.X = x;
                 c.Y = y;
 
-                x += (short)(c.MaxWidth + 1); //+1防止过于拥挤
+                x += (short)(c.MaxWidth + 4); //+4防止过于拥挤
             }
         }
     }
