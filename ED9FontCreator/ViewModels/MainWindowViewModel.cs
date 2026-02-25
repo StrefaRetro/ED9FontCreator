@@ -241,7 +241,8 @@ namespace ED9FontCreator.ViewModels
 							c.MaxWidth = (short)Math.Ceiling(calculatedAdvance);
 
 							// Offsety 0 (silnik gry)
-							c.XOffset = 0;
+							// Jeżeli przesuwamy literę na teksturze (xCorrection), musimy cofnąć ją przy renderowaniu
+							c.XOffset = (short)-Math.Ceiling(xCorrection);
 							c.YOffset = 0;
 
 							// Nowa linia
@@ -374,7 +375,7 @@ namespace ED9FontCreator.ViewModels
                     fs.WriteShort(c.ColorChannel); // 0x100 / 0x200
 
                     // ZMIANA: 0x12 (XOffset) - wg TwnKey to kerning/spacing, ustawiamy 0 lub małą wartość
-                    fs.WriteShort(0);
+                    fs.WriteShort(c.XOffset);
 
                     // ZMIANA: 0x14 (YOffset) - wg TwnKey ustawić na 0, bo silnik jest zbugowany
                     fs.WriteShort(0);
