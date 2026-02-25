@@ -107,7 +107,7 @@ public partial class CharsCanvas
                 if (x + c.MaxWidth > Bounds.Width)
                 {
                     x = 0;
-                    y += (short)(highest + 1);  //+1防止过于拥挤
+                    y += (short)(highest + _fontSettings.Padding);
                     highest = 0;
                 }
 
@@ -138,7 +138,7 @@ public partial class CharsCanvas
                 c.X = x;
                 c.Y = y;
 
-                x += (short)(c.MaxWidth + 1); //+1防止过于拥挤
+                x += (short)(c.MaxWidth + _fontSettings.Padding);
             }
         }
     }

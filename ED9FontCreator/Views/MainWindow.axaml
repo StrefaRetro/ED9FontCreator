@@ -88,6 +88,10 @@
                             FormatString="0"
                             Watermark="Font Size"
                             Value="{Binding FontSettings.FontSize}" />
+                        <NumericUpDown
+                            FormatString="0"
+                            Watermark="Padding"
+                            Value="{Binding FontSettings.Padding}" />
                         <DockPanel>
                             <TextBlock
                                 Margin="5"

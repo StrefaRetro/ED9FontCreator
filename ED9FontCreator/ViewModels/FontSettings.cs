@@ -8,6 +8,7 @@ namespace ED9FontCreator.ViewModels
         [ObservableProperty] private short _fontSize = 42;
         [ObservableProperty] private string _fontWeight = nameof(Avalonia.Media.FontWeight.Medium);
         [ObservableProperty] private string _fontStyle = nameof(Avalonia.Media.FontStyle.Normal);
+        [ObservableProperty] private int _padding = 1;
 
     }
 }
