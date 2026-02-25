@@ -179,7 +179,7 @@ namespace ED9FontCreator.ViewModels
             var startInfo = new ProcessStartInfo
             {
                 FileName = "texconv.exe",
-                Arguments = $"-y -nologo -ft dds -w 0 -h 0 -if CUBIC -f BC7_UNORM -m 1 -o \"{OutDir}\" -r:keep \"{png}\"",
+                Arguments = $"-y -nologo -ft dds -w 0 -h 0 -if CUBIC -f BC3_UNORM -m 1 -o \"{OutDir}\" -r:keep \"{png}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
