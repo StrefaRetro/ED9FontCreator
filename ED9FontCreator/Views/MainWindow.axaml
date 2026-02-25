@@ -92,6 +92,10 @@
                             FormatString="0"
                             Watermark="Padding"
                             Value="{Binding FontSettings.Padding}" />
+                        <NumericUpDown
+                            FormatString="0"
+                            Watermark="Top Padding (Correction)"
+                            Value="{Binding FontSettings.TopPadding}" />
                         <DockPanel>
                             <TextBlock
                                 Margin="5"

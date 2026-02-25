@@ -182,7 +182,7 @@ namespace ED9FontCreator.ViewModels
 
                         // Add extra padding at the top to prevent artifacts/bleeding above tall characters (Caps/Numbers)
                         // This shifts the glyph down inside the texture slot, ensuring the top rows are transparent.
-                        int extraTopPadding = 4;
+                        int extraTopPadding = FontSettings.TopPadding;
 
 						short lineHeight = (short)Math.Ceiling(fontAscent + fontDescent + shadowOffsetY + 6 + extraTopPadding);
 						// Align lineHeight to 4 bytes (BC7 block size) to prevent vertical bleeding
