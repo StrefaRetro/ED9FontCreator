@@ -185,7 +185,8 @@ namespace ED9FontCreator.ViewModels
 
 						short currentX = 0;
 						short currentY = 0;
-                        int texturePadding = Math.Max(FontSettings.Padding, 8); // Respect user padding but ensure minimum 8 to prevent bleeding
+                        // Increased minimum padding to 32 to prevent any BC7 compression bleeding or artifacts
+                        int texturePadding = Math.Max(FontSettings.Padding, 32);
 
 						var charList = DrawChars.ToList();
 						charList.Sort((x, y) => x.Code.CompareTo(y.Code));
@@ -231,10 +232,13 @@ namespace ED9FontCreator.ViewModels
 							float drawY = currentY + fontAscent;
 
 							// --- TEXTURE FRAME DIMENSIONS ---
-							float contentRight = drawX + pixelRect.Width + shadowOffsetX;
+                            // Fix: Use pixelRect.Right instead of Width to account for positive Left bearings correctly.
+                            // If we use Width, we underestimate the right edge when Left > 0, causing clipping or bleeding.
+							float contentRight = drawX + pixelRect.Right + shadowOffsetX;
 							float contentWidth = contentRight - currentX;
 
-							c.PixelWidth = (short)Math.Ceiling(contentWidth + 2);
+                            // Increased safety margin from +2 to +4
+							c.PixelWidth = (short)Math.Ceiling(contentWidth + 4);
 							c.PixelHeight = lineHeight;
 							c.Width = c.PixelWidth;
 
