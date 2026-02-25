@@ -172,8 +172,9 @@ namespace ED9FontCreator.ViewModels
 						shadowPaint.IsAntialias = true;
 						shadowPaint.Color = SKColors.Black.WithAlpha(shadowAlpha);
 
-						float fontAscent = -paint.FontMetrics.Ascent;
-						float fontDescent = paint.FontMetrics.Descent;
+						// Use Top/Bottom instead of Ascent/Descent to cover full glyph height including accents
+						float fontAscent = -paint.FontMetrics.Top;
+						float fontDescent = paint.FontMetrics.Bottom;
 						short lineHeight = (short)Math.Ceiling(fontAscent + fontDescent + shadowOffsetY + 6);
 
 						short currentX = 0;
