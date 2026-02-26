@@ -96,6 +96,16 @@
                             FormatString="0"
                             Watermark="Top Padding (Correction)"
                             Value="{Binding FontSettings.TopPadding}" />
+                        <TextBlock Text="Line Height Adjustment:" FontSize="12" Margin="0,5,0,0"/>
+                        <NumericUpDown
+                            FormatString="0"
+                            Watermark="Line Height Adj"
+                            Value="{Binding FontSettings.LineHeightAdjustment}" />
+                        <TextBlock Text="Width Adjustment:" FontSize="12" Margin="0,5,0,0"/>
+                        <NumericUpDown
+                            FormatString="0"
+                            Watermark="Width Adj"
+                            Value="{Binding FontSettings.WidthAdjustment}" />
                         <DockPanel>
                             <TextBlock
                                 Margin="5"

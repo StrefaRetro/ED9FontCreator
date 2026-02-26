@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ED9FontCreator.ViewModels
 {
@@ -10,5 +10,7 @@ namespace ED9FontCreator.ViewModels
         [ObservableProperty] private string _fontStyle = nameof(Avalonia.Media.FontStyle.Normal);
         [ObservableProperty] private int _padding = 1;
         [ObservableProperty] private int _topPadding = 4;
+        [ObservableProperty] private int _lineHeightAdjustment = 0;
+        [ObservableProperty] private int _widthAdjustment = 40;
     }
 }

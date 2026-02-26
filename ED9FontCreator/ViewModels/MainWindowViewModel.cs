@@ -184,7 +184,7 @@ namespace ED9FontCreator.ViewModels
                         // This shifts the glyph down inside the texture slot, ensuring the top rows are transparent.
                         int extraTopPadding = FontSettings.TopPadding;
 
-						short lineHeight = (short)Math.Ceiling(fontAscent + fontDescent + shadowOffsetY + 6 + extraTopPadding);
+						short lineHeight = (short)Math.Ceiling(fontAscent + fontDescent + shadowOffsetY + 6 + extraTopPadding + FontSettings.LineHeightAdjustment);
 						// Align lineHeight to 4 bytes (BC7 block size) to prevent vertical bleeding
 						lineHeight = (short)((lineHeight + 3) & ~3);
 
@@ -244,7 +244,7 @@ namespace ED9FontCreator.ViewModels
 							float contentWidth = contentRight - currentX;
 
                             // Increased safety margin from +2 to +4
-							c.PixelWidth = (short)Math.Ceiling(contentWidth + 4);
+							c.PixelWidth = (short)Math.Ceiling(contentWidth + FontSettings.WidthAdjustment);
 							c.PixelHeight = lineHeight;
 							c.Width = c.PixelWidth;
 
