@@ -1,30 +1,36 @@
-# 介绍
-自定义黎之轨迹的字体文件(纹理和fnt文件), 提供字符替换和简繁转换功能, 转换完成后替换游戏文件即可.  
-云豹版Nisa版测试可用, 副作用不详. 纹理尺寸用的是Nisa版尺寸: 4096*4096  
-  
-![main](Screenshots/main.png) 
+# Introduction
+Customize Trails through Daybreak font files (texture and fnt files), providing character replacement and Simplified/Traditional Chinese conversion functions. After conversion, replace the game files.
+Tested on Clouded Leopard and Nisa versions, side effects unknown. Texture size used is Nisa version size: 4096*4096.
 
-# 前置
- .net8
-# 使用
-### FNT解析
-以黎之轨迹Nisa版为例, 打开**ED9FontCreator**后拖动**game\asset\common\font\font_\*.fnt**到Fnt文件路径文本框中, 之后点击解析, 成功则会显示总字符数和数据长度.
-### 字体设定
-根据自己的需求设定字体, 推荐使用字符齐全的字体, 比如思源系列的字体.  
-默认设置是我个人使用的思源宋体.  
-调整设置后可先预览. 注: 预览会沿用字符设定.  
-### 字符设定
-简繁转换和特定字符的替换.
-### 生成
-以上设定完成后再进行下方操作:  
-1. 生成字符图片.  
-2. 导出字体文件. 
-3. 打开输出目录, 应该有2个文件在里面, **font_\*.fnt和font_\*.dds**.  
-4. 注意备份!! 此时我们把**font_\*.fnt**覆盖到**game\\asset\common\font**目录,  
-把**font_\*.dds**文件覆盖到**ame\asset\dx11\image**目录, 启动游戏查看是否成功.
-# 游戏效果(思源宋体Bold)
-![1](Screenshots/1.png) 
-![2](Screenshots/2.png) 
-# 参考
-[黎之轨迹工具包（更新中：2022/8/24）](https://bbs.3dmgame.com/forum.php?mod=viewthread&tid=6321673&page=1&extra=#pid301960392)  
+![main](Screenshots/main.png)
+
+# Prerequisites
+.net8
+
+# Usage
+### FNT Analysis
+Taking Trails through Daybreak Nisa version as an example, open **ED9FontCreator** and drag **game\asset\common\font\font_*.fnt** to the Fnt file path text box, then click Analyze. If successful, it will display the total number of characters and data length.
+
+### Font Settings
+Set the font according to your needs. It is recommended to use a font with complete characters, such as the Source Han series fonts.
+The default setting is Source Han Serif used by me personally.
+After adjusting the settings, you can preview first. Note: Preview will use the character settings.
+
+### Character Settings
+Simplified/Traditional Chinese conversion and specific character replacement.
+
+### Generation
+After completing the above settings, proceed with the following operations:
+1. Generate Character Images.
+2. Export Font File.
+3. Open the output directory, there should be 2 files inside, **font_*.fnt and font_*.dds**.
+4. **Note: Backup!!** At this time, overwrite **font_*.fnt** to the **game\asset\common\font** directory,
+overwrite the **font_*.dds** file to the **game\asset\dx11\image** directory, start the game to check if it is successful.
+
+# Game Effect (Source Han Serif Bold)
+![1](Screenshots/1.png)
+![2](Screenshots/2.png)
+
+# Reference
+[Trails through Daybreak Toolkit (Updating: 2022/8/24)](https://bbs.3dmgame.com/forum.php?mod=viewthread&tid=6321673&page=1&extra=#pid301960392)
 [ED9FontConverter](https://github.com/TwnKey/ED9FontConverter)

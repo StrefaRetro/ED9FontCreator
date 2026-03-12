@@ -57,6 +57,10 @@ public partial class CharsCanvas
             using var typeface = SKTypeface.FromFamilyName(_fontSettings.FontName, fontWeight, SKFontStyleWidth.Normal, fontStyle);
             using var symbolTypeface = SKTypeface.FromFamilyName("Segoe UI Symbol", fontWeight, SKFontStyleWidth.Normal, fontStyle);
 
+            // Add fallback fonts for Latin/Polish characters
+            var fallbackFontFamilies = new[] { "Segoe UI", "Arial", "Tahoma", "Times New Roman" };
+            var fallbackTypefaces = fallbackFontFamilies.Select(f => SKTypeface.FromFamilyName(f, fontWeight, SKFontStyleWidth.Normal, fontStyle)).ToList();
+
             using var paint = new SKPaint();
             paint.TextSize = _fontSettings.FontSize;
             paint.IsAntialias = true;
@@ -67,36 +71,46 @@ public partial class CharsCanvas
                 {
                     using var background = new SKPaint();
                     background.Color = new SKColor(244, 0, 161);
-                    Draw(_chars, canvas, paint, typeface, symbolTypeface, background);
+                    Draw(_chars, canvas, paint, typeface, symbolTypeface, fallbackTypefaces, background);
                 }
                 else
                 {
-                    Draw(_chars, canvas, paint, typeface, symbolTypeface);
+                    Draw(_chars, canvas, paint, typeface, symbolTypeface, fallbackTypefaces);
                 }
+
+                foreach(var fb in fallbackTypefaces) fb.Dispose();
                 canvas.Restore();
                 return;
             }
             //red
             paint.Color = new SKColor(255, 0, 0);
             var filteredChars = _chars.Where(c => c.ColorChannel == 0x200).ToList();
-            Draw(filteredChars, canvas, paint, typeface, symbolTypeface);
+            Draw(filteredChars, canvas, paint, typeface, symbolTypeface, fallbackTypefaces);
             //green
             paint.BlendMode = SKBlendMode.Screen;
             paint.Color = new SKColor(0, 255, 0);
             filteredChars = _chars.Where(c => c.ColorChannel == 0x100).ToList();
-            Draw(filteredChars, canvas, paint, typeface, symbolTypeface);
+            Draw(filteredChars, canvas, paint, typeface, symbolTypeface, fallbackTypefaces);
 
+            foreach(var fb in fallbackTypefaces) fb.Dispose();
             canvas.Restore();
         }
 
-        private void Draw(List<FntChar> filteredChars, SKCanvas canvas, SKPaint paint, SKTypeface typeface, SKTypeface symbolTypeface, SKPaint? background = null)
+        private void Draw(List<FntChar> filteredChars, SKCanvas canvas, SKPaint paint, SKTypeface typeface, SKTypeface symbolTypeface, List<SKTypeface> fallbackTypefaces, SKPaint? background = null)
         {
             short x = 0, y = 0, highest = 0;
             var pixelRect = new SKRect();
             foreach (var c in filteredChars)
             {
                 var text = c.ReplacedChar.ToString();
-                paint.Typeface = typeface.ContainsGlyph(c.ReplacedChar) ? typeface : symbolTypeface;
+
+                SKTypeface usedTypeface = typeface;
+                if (!typeface.ContainsGlyph(c.ReplacedChar))
+                {
+                    usedTypeface = fallbackTypefaces.FirstOrDefault(tf => tf.ContainsGlyph(c.ReplacedChar)) ?? symbolTypeface;
+                }
+                paint.Typeface = usedTypeface;
+
                 c.Width = (short)Math.Ceiling(paint.MeasureText(text, ref pixelRect));
                 c.PixelWidth = (short)Math.Ceiling(pixelRect.Width);
                 c.PixelHeight = pixelRect.IsEmpty ? c.Width : (short)Math.Ceiling(pixelRect.Height);
@@ -107,7 +121,7 @@ public partial class CharsCanvas
                 if (x + c.MaxWidth > Bounds.Width)
                 {
                     x = 0;
-                    y += (short)(highest + 1);  //+1防止过于拥挤
+                    y += (short)(highest + _fontSettings.Padding);
                     highest = 0;
                 }
 
@@ -138,7 +152,7 @@ public partial class CharsCanvas
                 c.X = x;
                 c.Y = y;
 
-                x += (short)(c.MaxWidth + 1); //+1防止过于拥挤
+                x += (short)(c.MaxWidth + _fontSettings.Padding);
             }
         }
     }
